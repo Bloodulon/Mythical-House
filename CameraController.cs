@@ -2,25 +2,40 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
-public class CameraController : MonoBehaviour
+public class PlayerController : MonoBehaviour
 {
-    public float sensitivity = 2.0f; // Чувствительность мыши
-    public float maxYAngle = 80.0f; // Максимальный угол вращения по вертикали
-    
-    private float rotationX = 0.0f;
+    public float moveSpeed = 0.5f; // Скорость движения персонажа
+    public float gravity = -9.81f; // Гравитация (можно адаптировать)
+
+    private CharacterController controller;
+    private Vector3 moveDirection;
+
+    private void Start()
+    {
+        controller = GetComponent<CharacterController>();
+        Cursor.lockState = CursorLockMode.Locked;
+        Cursor.visible = true;
+    }
 
     private void Update()
     {
-        // Получаем ввод от мыши
-        float mouseX = Input.GetAxis("Mouse X");
-        float mouseY = Input.GetAxis("Mouse Y");
+        // Получаем ввод от игрока только по оси "Vertical" (вперед/назад)
+        float verticalInput = Input.GetAxis("Vertical");
 
-        // Вращаем персонажа в горизонтальной плоскости
-        transform.parent.Rotate(Vector3.up * mouseX * sensitivity);
-        
-        // Вращаем камеру в вертикальной плоскости
-        rotationX -= mouseY * sensitivity;
-        rotationX = Mathf.Clamp(rotationX, -maxYAngle, maxYAngle);
-        transform.localRotation = Quaternion.Euler(rotationX, 0.0f, 0.0f);
+        // Вычисляем направление движения (только вперед)
+        moveDirection = transform.forward * verticalInput;
+
+        // Проверка на то, находится ли персонаж на земле
+        if (controller.isGrounded)
+        {
+            // Если на земле, сбрасываем вертикальную скорость
+            moveDirection.y = 0f;
+        }
+
+        // Применяем гравитацию
+        moveDirection.y += gravity * Time.deltaTime; // Убедитесь, что g отрицательная для падения вниз
+
+        // Двигаем персонажа
+        controller.Move(moveDirection * moveSpeed * Time.deltaTime);
     }
 }
